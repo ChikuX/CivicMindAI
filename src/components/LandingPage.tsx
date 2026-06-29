@@ -62,6 +62,14 @@ export default function LandingPage({ onLoginClick, onGetStartedClick, issues, c
             >
               Start Reporting <ArrowRight className="w-4 h-4" />
             </button>
+            {!currentUser && (
+              <button 
+                onClick={onLoginClick}
+                className="w-full sm:w-auto px-8 py-3.5 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700 font-medium rounded-full transition flex items-center justify-center gap-2 shadow-sm"
+              >
+                Login to Account
+              </button>
+            )}
           </div>
         </div>
       </main>

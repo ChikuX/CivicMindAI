@@ -224,6 +224,7 @@ export default function ReportDrawer({ isOpen, onClose, currentUser, onReportSub
     const file = e.target.files?.[0];
     if (!file) return;
 
+    console.log("Image Selected:", file.name);
     setAnalyzing(true);
     setError('');
 
@@ -315,13 +316,19 @@ export default function ReportDrawer({ isOpen, onClose, currentUser, onReportSub
       // Upload image to Firebase Storage if available
       let finalImageUrl = '';
       if (image && image.startsWith('data:')) {
+        console.log("Upload Started");
         try {
           const imageRef = ref(storage, `issues/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`);
           await uploadString(imageRef, image, 'data_url');
+          console.log("Upload Completed");
           finalImageUrl = await getDownloadURL(imageRef);
+          console.log("Download URL Received:", finalImageUrl);
         } catch (err) {
           console.error("Failed to upload image to Storage:", err);
-          finalImageUrl = image; // fallback to base64 if storage fails
+          setError('Failed to upload image to Storage. Please try again.');
+          setSubmitting(false);
+          setRouting(false);
+          return; // stop execution
         }
       }
 
@@ -363,6 +370,7 @@ export default function ReportDrawer({ isOpen, onClose, currentUser, onReportSub
       try {
         const issuesCol = collection(db, 'issues');
         docRef = await addDoc(issuesCol, newIssue);
+        console.log("Firestore Updated");
       } catch (err) {
         handleFirestoreError(err, OperationType.CREATE, 'issues');
       }

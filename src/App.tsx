@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { auth, db, OperationType, handleFirestoreError } from './firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, onSnapshot, collection, query, orderBy, getDocs, addDoc, deleteDoc, clearIndexedDbPersistence } from 'firebase/firestore';
+import { doc, getDoc, collection, query, orderBy, getDocs, addDoc, deleteDoc, clearIndexedDbPersistence } from 'firebase/firestore';
 import { CivicIssue, UserProfile } from './types';
 
 // Component imports
@@ -121,50 +121,44 @@ export default function App() {
     }
   }, []);
 
-  // 1. Subscribe to Firestore Issues in real-time
+  // 1. Fetch Firestore Issues
   useEffect(() => {
-    const q = query(collection(db, 'issues'), orderBy('createdAt', 'desc'));
-    
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
-      const list: CivicIssue[] = [];
-      snapshot.forEach((docSnap) => {
-        list.push({ id: docSnap.id, ...docSnap.data() } as CivicIssue);
-      });
+    const fetchIssues = async () => {
+      try {
+        const q = query(collection(db, 'issues'), orderBy('createdAt', 'desc'));
+        const querySnapshot = await getDocs(q);
+        const list: CivicIssue[] = [];
+        querySnapshot.forEach((docSnap) => {
+          list.push({ id: docSnap.id, ...docSnap.data() } as CivicIssue);
+        });
 
-      setIssues(list);
-      setLoadingIssues(false);
-    }, (error) => {
-      console.error('Firestore Issues real-time subscription error:', error);
-      // Start clean with an empty array if loading fails
-      setIssues([]);
-      setLoadingIssues(false);
-    });
+        setIssues(list);
+      } catch (error) {
+        console.error('Firestore Issues fetch error:', error);
+        setIssues([]);
+      } finally {
+        setLoadingIssues(false);
+      }
+    };
 
-    return () => unsubscribe();
+    fetchIssues();
   }, []);
 
   // 2. Auth State Observer
   useEffect(() => {
-    let unsubProfile: (() => void) | null = null;
-
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       setLoadingAuth(true);
-      
-      // Cleanup previous profile listener if it exists
-      if (unsubProfile) {
-        unsubProfile();
-        unsubProfile = null;
-      }
 
       if (authUser) {
         // Automatically redirect to dashboard on valid session load
         setCurrentTab('dashboard');
+        setShowLanding(false);
 
         // Fetch matching UserProfile document from Firestore
         const userDocRef = doc(db, 'users', authUser.uid);
         
-        // Listen to User Profile changes in real-time to update points/badges instantly
-        unsubProfile = onSnapshot(userDocRef, (docSnap) => {
+        try {
+          const docSnap = await getDoc(userDocRef);
           if (docSnap.exists()) {
             setCurrentUser(docSnap.data() as UserProfile);
           } else {
@@ -181,8 +175,7 @@ export default function App() {
               role: fallbackRole
             });
           }
-          setLoadingAuth(false);
-        }, (error) => {
+        } catch (error) {
           console.error("User profile load error:", error);
           const email = authUser.email || '';
           const fallbackRole = email.includes('admin') ? 'admin' : email.includes('officer') ? 'authority' : 'citizen';
@@ -195,8 +188,9 @@ export default function App() {
             verificationsCount: 0,
             role: fallbackRole
           });
+        } finally {
           setLoadingAuth(false);
-        });
+        }
 
       } else {
         setCurrentUser(null);
@@ -205,7 +199,6 @@ export default function App() {
     });
 
     return () => {
-      if (unsubProfile) unsubProfile();
       unsubscribe();
     };
   }, []);
@@ -597,6 +590,14 @@ export default function App() {
         onReportSubmitted={(newIssue) => {
           // Centering map on the coordinates of the newly added issue
           setMapCenter([newIssue.lat, newIssue.lng]);
+          setIssues(prev => [newIssue, ...prev]);
+          if (currentUser) {
+            setCurrentUser(prev => prev ? {
+              ...prev,
+              points: prev.points + 10,
+              reportsCount: prev.reportsCount + 1
+            } : prev);
+          }
         }}
         mapCenter={mapCenter}
       />

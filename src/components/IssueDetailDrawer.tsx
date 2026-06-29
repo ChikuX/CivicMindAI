@@ -118,6 +118,10 @@ export default function IssueDetailDrawer({
   const [letterDraft, setLetterDraft] = useState('');
   const [loadingLetter, setLoadingLetter] = useState(false);
 
+  // Image load states
+  const [imageErrorFlag, setImageErrorFlag] = useState(false);
+  const [resolvedImageErrorFlag, setResolvedImageErrorFlag] = useState(false);
+
   // After photo upload state
   const [afterPhoto, setAfterPhoto] = useState<string | null>(null);
   const [afterPhotoLoading, setAfterPhotoLoading] = useState(false);
@@ -134,6 +138,8 @@ export default function IssueDetailDrawer({
       setVerificationFeedback('');
       setVerificationStatus('idle');
       setAfterPhoto(null);
+      setImageErrorFlag(false);
+      setResolvedImageErrorFlag(false);
       setResolutionNotesInput(issue.resolutionNotes || '');
       setError('');
     }
@@ -383,17 +389,23 @@ export default function IssueDetailDrawer({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    console.log("Image Selected:", file.name);
     setAfterPhotoLoading(true);
     try {
       const resizedBase64 = await resizeImage(file);
       try {
+        console.log("Upload Started");
         const imageRef = ref(storage, `issues/resolved_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`);
         await uploadString(imageRef, resizedBase64, 'data_url');
+        console.log("Upload Completed");
         const url = await getDownloadURL(imageRef);
+        console.log("Download URL Received:", url);
         setAfterPhoto(url);
       } catch (err) {
-        console.error("Firebase Storage failed, falling back to base64:", err);
-        setAfterPhoto(resizedBase64);
+        console.error("Firebase Storage failed:", err);
+        setError('Failed to upload resolution photo to Storage. Please try again.');
+        setAfterPhotoLoading(false);
+        return; // stop execution
       }
     } catch (err) {
       console.error(err);
@@ -478,13 +490,21 @@ export default function IssueDetailDrawer({
           {issue.resolvedImageUrl ? (
             <div className="grid grid-cols-2 gap-2">
               <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 h-40 bg-slate-100 dark:bg-slate-950 shadow-sm transition-colors duration-300">
-                <img src={issue.imageUrl} alt="Before" className="w-full h-full object-cover" />
+                {imageErrorFlag ? (
+                  <div className="w-full h-full flex items-center justify-center text-xs text-rose-500 bg-rose-50 dark:bg-rose-950/20 font-sans p-2 text-center">Failed to load Before Image</div>
+                ) : (
+                  <img src={issue.imageUrl} alt="Before" className="w-full h-full object-cover" onLoad={() => console.log('Image Loaded')} onError={() => setImageErrorFlag(true)} />
+                )}
                 <div className="absolute top-2 left-2 z-10">
                   <span className="bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border border-slate-200 dark:border-slate-800 px-2 py-0.5 rounded-md font-mono text-[9px] font-bold text-slate-700 dark:text-slate-300">Before</span>
                 </div>
               </div>
               <div className="relative rounded-2xl overflow-hidden border border-emerald-200 dark:border-emerald-900/50 h-40 bg-emerald-50 dark:bg-slate-950 shadow-sm transition-colors duration-300">
-                <img src={issue.resolvedImageUrl} alt="After" className="w-full h-full object-cover" />
+                {resolvedImageErrorFlag ? (
+                  <div className="w-full h-full flex items-center justify-center text-xs text-rose-500 bg-rose-50 dark:bg-rose-950/20 font-sans p-2 text-center">Failed to load After Image</div>
+                ) : (
+                  <img src={issue.resolvedImageUrl} alt="After" className="w-full h-full object-cover" onLoad={() => console.log('Image Loaded')} onError={() => setResolvedImageErrorFlag(true)} />
+                )}
                 <div className="absolute top-2 right-2 z-10">
                   <span className="bg-emerald-50/90 dark:bg-emerald-950/90 backdrop-blur-md border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-md font-mono text-[9px] font-bold text-emerald-600 dark:text-emerald-400">After</span>
                 </div>
@@ -493,17 +513,21 @@ export default function IssueDetailDrawer({
           ) : (
             <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 h-48 bg-slate-100 dark:bg-slate-950 shrink-0 shadow-sm flex items-center justify-center transition-colors duration-300">
               {issue.imageUrl && (issue.imageUrl.startsWith('data:') || issue.imageUrl.startsWith('http')) ? (
-                <>
-                  <img src={issue.imageUrl} alt="Civic issue photograph" className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 dark:from-slate-950/90 via-transparent to-transparent"></div>
-                  
-                  {/* Severity tag */}
-                  <div className="absolute top-4 left-4 z-10">
-                    <span className="bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border border-slate-200 dark:border-slate-800 px-2.5 py-1 rounded-full font-mono text-[10px] font-bold text-slate-900 dark:text-white transition-colors duration-300">
-                      {severityLabelMap[issue.severity as keyof typeof severityLabelMap]}
-                    </span>
-                  </div>
-                </>
+                imageErrorFlag ? (
+                  <div className="w-full h-full flex items-center justify-center text-sm text-rose-500 bg-rose-50 dark:bg-rose-950/20 font-sans p-4 text-center">Failed to load image. The file might be corrupted or removed.</div>
+                ) : (
+                  <>
+                    <img src={issue.imageUrl} alt="Civic issue photograph" className="w-full h-full object-cover" onLoad={() => console.log('Image Loaded')} onError={() => setImageErrorFlag(true)} />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 dark:from-slate-950/90 via-transparent to-transparent"></div>
+                    
+                    {/* Severity tag */}
+                    <div className="absolute top-4 left-4 z-10">
+                      <span className="bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border border-slate-200 dark:border-slate-800 px-2.5 py-1 rounded-full font-mono text-[10px] font-bold text-slate-900 dark:text-white transition-colors duration-300">
+                        {severityLabelMap[issue.severity as keyof typeof severityLabelMap]}
+                      </span>
+                    </div>
+                  </>
+                )
               ) : (
                 <span className="text-lg text-slate-500 font-accent">No image uploaded. Take a picture next time!</span>
               )}

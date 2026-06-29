@@ -18,6 +18,8 @@ export const auth = getAuth(app);
 // Use the custom database ID provided in firebase-applet-config.json
 export const db = initializeFirestore(app, { experimentalForceLongPolling: true }, "ai-studio-bbe88630-81d6-49c9-9aa9-d68fa1fe4649");
 export const storage = getStorage(app);
+storage.maxUploadRetryTime = 5000;
+storage.maxOperationRetryTime = 5000;
 
 export enum OperationType {
   CREATE = 'create',
