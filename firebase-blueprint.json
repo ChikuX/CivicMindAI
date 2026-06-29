@@ -1,0 +1,70 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile containing roles, points, badges, and activity stats.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string" },
+        "points": { "type": "integer" },
+        "badges": { "type": "array" },
+        "reportsCount": { "type": "integer" },
+        "verificationsCount": { "type": "integer" },
+        "role": { "type": "string", "enum": ["citizen", "authority", "admin"] }
+      },
+      "required": ["id", "points", "badges", "reportsCount", "verificationsCount", "role"]
+    },
+    "CivicIssue": {
+      "title": "CivicIssue",
+      "description": "A civic issue reported by a citizen, routing department, verification and status history.",
+      "type": "object",
+      "properties": {
+        "category": { "type": "string" },
+        "severity": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+        "description": { "type": "string" },
+        "department": { "type": "string" },
+        "departmentExplanation": { "type": "string" },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "address": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "reporterName": { "type": "string" },
+        "isAnonymous": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["Reported", "Verified", "In Progress", "Resolved", "Closed"] },
+        "verificationCount": { "type": "integer" },
+        "verifiedBy": { "type": "array" },
+        "createdAt": { "type": "integer" },
+        "updatedAt": { "type": "integer" },
+        "activityLog": { "type": "array" },
+        "resolvedImageUrl": { "type": "string" },
+        "resolvedAt": { "type": "integer" }
+      },
+      "required": ["category", "severity", "description", "department", "lat", "lng", "address", "imageUrl", "reporterName", "isAnonymous", "status", "verificationCount", "verifiedBy", "createdAt", "updatedAt", "activityLog"]
+    },
+    "Username": {
+      "title": "Username",
+      "description": "Mapping from lowercase reporter name to user UID.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" }
+      },
+      "required": ["uid", "name"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Contains private and public profile details for users."
+    },
+    "issues/{issueId}": {
+      "schema": "CivicIssue",
+      "description": "Contains community-reported civic issues."
+    },
+    "usernames/{nameLower}": {
+      "schema": "Username",
+      "description": "Handles global user name-to-uid lookups to prevent duplicate names."
+    }
+  }
+}

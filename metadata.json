@@ -1,0 +1,10 @@
+{
+  "name": "CivicMind AI",
+  "description": "Your neighborhood. Your voice. Fixed faster. Hyperlocal civic problem solver.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

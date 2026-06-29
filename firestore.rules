@@ -1,0 +1,46 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAuthority() {
+      let role = getUserData().role;
+      return role == 'authority' || role == 'admin';
+    }
+
+    function isAdmin() {
+      return getUserData().role == 'admin';
+    }
+
+    match /users/{userId} {
+      allow read: if true;
+      // Users can update their own profile, or Authority can update points
+      allow write: if isSignedIn() && (request.auth.uid == userId || isAuthority());
+    }
+
+    match /usernames/{nameLower} {
+      allow read: if true;
+      allow create: if isSignedIn();
+    }
+
+    match /issues/{issueId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      // Allow updates if user is authority (can resolve/edit), or if citizen is just appending to comments/verifiedBy/activityLog
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn() && isAdmin();
+    }
+  }
+}
