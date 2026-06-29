@@ -183,16 +183,16 @@ export default function DashboardSection({
     .slice(0, 3);
 
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-6 max-w-7xl mx-auto w-full animate-fade-in">
+    <div className="flex-1 overflow-y-auto p-6 space-y-6 max-w-7xl mx-auto w-full animate-fade-in bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
       
       {/* Page Title & Heatmap Toggle banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5 transition-colors duration-300">
         <div>
-          <h2 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
+          <h2 className="font-display text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <BarChart2 className="w-6 h-6 text-blue-500" />
             Impact & Analytics Dashboard
           </h2>
-          <p className="text-sm text-slate-400 mt-0.5">
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-0.5">
             Empirical tracking of civic issue density and resolving rates in real-time.
           </p>
         </div>
@@ -200,10 +200,10 @@ export default function DashboardSection({
         {/* Heatmap controller button */}
         <button
           onClick={onToggleHeatmap}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition border shadow-md shrink-0 ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition border shadow-sm shrink-0 ${
             heatmapEnabled 
-              ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 shadow-amber-500/5' 
-              : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
+              ? 'bg-amber-50 border-amber-200 text-amber-600 shadow-amber-500/5 dark:bg-amber-500/10 dark:border-amber-500/30 dark:text-amber-400' 
+              : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
           }`}
         >
           <Layers className={`w-4 h-4 ${heatmapEnabled ? 'animate-pulse' : ''}`} />
@@ -215,46 +215,46 @@ export default function DashboardSection({
       <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
         
         {/* Total issues card */}
-        <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 flex items-center gap-4 hover:border-slate-700 transition">
-          <div className="p-3 bg-blue-500/10 rounded-xl text-blue-400 shrink-0">
+        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center gap-4 hover:border-slate-300 dark:hover:border-slate-700 transition shadow-sm">
+          <div className="p-3 bg-blue-50 dark:bg-blue-500/10 rounded-xl text-blue-600 dark:text-blue-400 shrink-0">
             <AlertTriangle className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Total Reports</p>
-            <h3 className="text-2xl font-extrabold text-slate-100 font-sans tracking-tight mt-0.5">{totalCount}</h3>
+            <p className="font-mono text-xs text-slate-500 font-medium uppercase tracking-wider">Total Reports</p>
+            <h3 className="text-3xl font-sans font-semibold text-slate-900 dark:text-slate-100 tracking-tight mt-0.5">{totalCount}</h3>
           </div>
         </div>
 
         {/* Active issues card */}
-        <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 flex items-center gap-4 hover:border-slate-700 transition">
-          <div className="p-3 bg-amber-500/10 rounded-xl text-amber-400 shrink-0">
+        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center gap-4 hover:border-slate-300 dark:hover:border-slate-700 transition shadow-sm">
+          <div className="p-3 bg-amber-50 dark:bg-amber-500/10 rounded-xl text-amber-600 dark:text-amber-400 shrink-0">
             <RefreshCw className="w-5 h-5 animate-spin-slow" />
           </div>
           <div>
-            <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Active Damage</p>
-            <h3 className="text-2xl font-extrabold text-slate-100 font-sans tracking-tight mt-0.5">{activeCount}</h3>
+            <p className="font-mono text-xs text-slate-500 font-medium uppercase tracking-wider">Active Damage</p>
+            <h3 className="text-3xl font-sans font-semibold text-slate-900 dark:text-slate-100 tracking-tight mt-0.5">{activeCount}</h3>
           </div>
         </div>
 
         {/* Resolved issues card */}
-        <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 flex items-center gap-4 hover:border-slate-700 transition">
-          <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-400 shrink-0">
+        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center gap-4 hover:border-slate-300 dark:hover:border-slate-700 transition shadow-sm">
+          <div className="p-3 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl text-emerald-600 dark:text-emerald-400 shrink-0">
             <CheckCircle className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Total Resolved</p>
-            <h3 className="text-2xl font-extrabold text-slate-100 font-sans tracking-tight mt-0.5">{resolvedCount}</h3>
+            <p className="font-mono text-xs text-slate-500 font-medium uppercase tracking-wider">Total Resolved</p>
+            <h3 className="text-3xl font-sans font-semibold text-slate-900 dark:text-slate-100 tracking-tight mt-0.5">{resolvedCount}</h3>
           </div>
         </div>
 
         {/* Resolution rate card */}
-        <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 flex items-center gap-4 hover:border-slate-700 transition">
-          <div className="p-3 bg-cyan-500/10 rounded-xl text-cyan-400 shrink-0">
+        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center gap-4 hover:border-slate-300 dark:hover:border-slate-700 transition shadow-sm">
+          <div className="p-3 bg-cyan-50 dark:bg-cyan-500/10 rounded-xl text-cyan-600 dark:text-cyan-400 shrink-0">
             <Award className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Resolution Rate</p>
-            <h3 className="text-2xl font-extrabold text-slate-100 font-sans tracking-tight mt-0.5">{resolutionRate}%</h3>
+            <p className="font-mono text-xs text-slate-500 font-medium uppercase tracking-wider">Resolution Rate</p>
+            <h3 className="text-3xl font-sans font-semibold text-slate-900 dark:text-slate-100 tracking-tight mt-0.5">{resolutionRate}%</h3>
           </div>
         </div>
 
@@ -264,8 +264,8 @@ export default function DashboardSection({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Chart.js bar chart (Takes 2/3 space on Desktop) */}
-        <div className="lg:col-span-2 p-5 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col h-[320px]">
-          <h4 className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-4 flex items-center gap-1.5 shrink-0">
+        <div className="lg:col-span-2 p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col h-[320px] transition-colors duration-300">
+          <h4 className="font-mono text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-1.5 shrink-0">
             <BarChart2 className="w-4 h-4 text-blue-500" />
             Issue Category Frequency
           </h4>
@@ -275,32 +275,32 @@ export default function DashboardSection({
         </div>
 
         {/* Side Panel: Demographics & Neighborhoods */}
-        <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4 flex flex-col justify-between">
+        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 flex flex-col justify-between transition-colors duration-300">
           <div className="space-y-4">
-            <h4 className="text-sm font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-              <TrendingUp className="w-4 h-4 text-blue-400" />
+            <h4 className="font-mono text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <TrendingUp className="w-4 h-4 text-blue-500" />
               Hotspots & Trends
             </h4>
 
             {/* Top defect category */}
-            <div className="p-3 bg-slate-950 rounded-xl border border-slate-850 space-y-1">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Most Common Issue</span>
-              <p className="text-slate-200 font-bold text-sm flex items-center gap-1">
+            <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-800/50 space-y-1">
+              <span className="font-mono text-[10px] font-bold text-slate-500 uppercase tracking-wider">Most Common Issue</span>
+              <p className="text-slate-900 dark:text-slate-200 font-bold text-sm flex items-center gap-1">
                 {topCategory.charAt(0).toUpperCase() + topCategory.slice(1)}
               </p>
             </div>
 
             {/* Top neighborhood */}
-            <div className="p-3 bg-slate-950 rounded-xl border border-slate-850 space-y-1">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Most Active District</span>
-              <p className="text-slate-200 font-bold text-sm">
+            <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-100 dark:border-slate-800/50 space-y-1">
+              <span className="font-mono text-[10px] font-bold text-slate-500 uppercase tracking-wider">Most Active District</span>
+              <p className="text-slate-900 dark:text-slate-200 font-bold text-sm">
                 {topNeighborhood}
               </p>
             </div>
           </div>
 
-          <div className="p-3 bg-blue-500/5 rounded-xl border border-blue-500/10 text-[11px] text-slate-400 leading-relaxed">
-            <strong className="text-slate-300 font-semibold block mb-0.5">ℹ️ Hotspot Density Info</strong>
+          <div className="p-3 bg-blue-50 dark:bg-blue-500/5 rounded-xl border border-blue-100 dark:border-blue-500/10 text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
+            <strong className="text-slate-800 dark:text-slate-300 font-semibold block mb-0.5">ℹ️ Hotspot Density Info</strong>
             Density tracking works by mapping clustered report markers. Enabling the density filter overlay lets citizens identify zone safety.
           </div>
         </div>
@@ -309,38 +309,38 @@ export default function DashboardSection({
 
       {/* TRENDING ISSUES LIST (What is blowin' up) */}
       <div className="space-y-4">
-        <h3 className="text-base font-bold text-slate-200 flex items-center gap-1.5">
+        <h3 className="font-display text-base font-bold text-slate-900 dark:text-slate-200 flex items-center gap-1.5">
           <TrendingUp className="w-5 h-5 text-amber-500" />
           Trending Community Grievances
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {trendingIssues.length === 0 ? (
-            <div className="col-span-3 py-8 text-center text-xs text-slate-500 border border-dashed border-slate-800 rounded-2xl bg-slate-950/40">
-              No trending reports active right now.
+            <div className="col-span-3 py-8 text-center text-xl font-accent text-slate-500 border border-dashed border-slate-300 dark:border-slate-800 rounded-2xl bg-slate-50 dark:bg-slate-950/40">
+              No trending reports active right now. Be the first to start a movement!
             </div>
           ) : (
             trendingIssues.map((issue) => (
               <div 
                 key={issue.id}
                 onClick={() => onSelectIssue(issue)}
-                className="p-4 bg-slate-900 border border-slate-800 rounded-xl hover:border-slate-700 cursor-pointer flex flex-col justify-between transition group h-40"
+                className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl hover:border-slate-300 dark:hover:border-slate-700 shadow-sm cursor-pointer flex flex-col justify-between transition group h-40"
               >
                 <div>
                   <div className="flex items-center justify-between gap-2">
-                    <span className="bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded text-[10px] font-bold text-blue-400 capitalize">
+                    <span className="bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 px-2 py-0.5 rounded text-[10px] font-bold text-blue-600 dark:text-blue-400 capitalize">
                       {issue.category}
                     </span>
-                    <span className="text-[10px] font-semibold text-slate-500">
+                    <span className="font-mono text-[10px] font-semibold text-slate-500">
                       🔥 {issue.verificationCount} verifications
                     </span>
                   </div>
-                  <p className="text-xs text-slate-200 mt-2.5 line-clamp-3 group-hover:text-blue-300 transition leading-relaxed font-sans">
+                  <p className="text-xs text-slate-700 dark:text-slate-300 mt-2.5 line-clamp-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition leading-relaxed font-sans">
                     "{issue.description}"
                   </p>
                 </div>
                 
-                <div className="flex items-center gap-1 text-[10px] text-slate-500 font-semibold pt-2 border-t border-slate-850 mt-2">
+                <div className="flex items-center gap-1 font-mono text-[10px] text-slate-500 font-medium pt-2 border-t border-slate-100 dark:border-slate-800 mt-2">
                   <MapPin className="w-3.5 h-3.5 text-blue-500 shrink-0" />
                   <span className="truncate">{issue.address.split(',')[0]}</span>
                 </div>

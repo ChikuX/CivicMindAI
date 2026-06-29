@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+import { initializeFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
@@ -15,11 +15,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
-// Explicitly ensure persistence
-setPersistence(auth, browserLocalPersistence).catch(console.error);
-
 // Use the custom database ID provided in firebase-applet-config.json
-export const db = getFirestore(app, "ai-studio-bbe88630-81d6-49c9-9aa9-d68fa1fe4649");
+export const db = initializeFirestore(app, { experimentalForceLongPolling: true }, "ai-studio-bbe88630-81d6-49c9-9aa9-d68fa1fe4649");
 export const storage = getStorage(app);
 
 export enum OperationType {

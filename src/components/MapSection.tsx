@@ -85,8 +85,9 @@ export default function MapSection({
   onSelectIssue,
   heatmapEnabled,
   mapCenter,
-  onReportClick
-}: MapSectionProps) {
+  onReportClick,
+  darkMode
+}: MapSectionProps & { darkMode?: boolean }) {
   
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapInstance = useRef<L.Map | null>(null);
@@ -106,9 +107,6 @@ export default function MapSection({
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
       }).addTo(map);
-
-      // Force .dark-map filter styling class to Leaflet container
-      L.DomUtil.addClass(mapContainerRef.current, 'dark-map');
 
       // Put zoom control in top-right
       L.control.zoom({ position: 'topright' }).addTo(map);
@@ -140,6 +138,17 @@ export default function MapSection({
       }
     };
   }, []);
+
+  // Sync dark mode class
+  useEffect(() => {
+    if (mapContainerRef.current) {
+      if (darkMode) {
+        L.DomUtil.addClass(mapContainerRef.current, 'dark-map');
+      } else {
+        L.DomUtil.removeClass(mapContainerRef.current, 'dark-map');
+      }
+    }
+  }, [darkMode]);
 
   // Sync zoom/re-center when mapCenter changes
   useEffect(() => {
@@ -233,11 +242,11 @@ export default function MapSection({
             
             // Marker tooltip on hover
             marker.bindTooltip(`
-              <div class="p-1 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 flex items-center gap-2">
+              <div class="p-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 flex items-center gap-2 font-sans shadow-sm dark:shadow-none transition-colors duration-300">
                 <span class="text-sm shrink-0">${issue.imageUrl ? `<img src="${issue.imageUrl}" class="w-8 h-8 rounded object-cover"/>` : '🔧'}</span>
                 <div>
-                  <p class="font-bold text-xs uppercase text-slate-300 leading-none">${issue.category}</p>
-                  <p class="text-[9px] text-slate-500 font-semibold mt-1 leading-none">Severity: ${issue.severity}</p>
+                  <p class="font-bold text-xs uppercase text-slate-900 dark:text-slate-300 leading-none">${issue.category}</p>
+                  <p class="text-[9px] text-slate-500 font-semibold mt-1 leading-none font-mono">Severity: ${issue.severity}</p>
                 </div>
               </div>
             `, { 
@@ -282,12 +291,12 @@ export default function MapSection({
 
           // Hover popups
           marker.bindTooltip(`
-            <div class="p-1.5 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 flex items-center gap-2 font-sans">
-              ${issue.imageUrl ? `<img src="${issue.imageUrl}" class="w-10 h-10 rounded object-cover border border-slate-800 shrink-0"/>` : ''}
+            <div class="p-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-900 dark:text-slate-100 flex items-center gap-2 font-sans shadow-sm dark:shadow-none transition-colors duration-300">
+              ${issue.imageUrl ? `<img src="${issue.imageUrl}" class="w-10 h-10 rounded object-cover border border-slate-200 dark:border-slate-800 shrink-0 transition-colors duration-300"/>` : ''}
               <div class="leading-snug">
-                <p class="font-bold text-[11px] uppercase tracking-wide text-slate-200 leading-none">${issue.category}</p>
-                <p class="text-[9px] text-slate-400 mt-1 line-clamp-1">"${issue.description}"</p>
-                <p class="text-[8px] text-slate-500 font-semibold mt-0.5">${issue.address.split(',')[0]}</p>
+                <p class="font-bold text-[11px] uppercase tracking-wide text-slate-900 dark:text-slate-200 leading-none">${issue.category}</p>
+                <p class="text-[9px] text-slate-600 dark:text-slate-400 mt-1 line-clamp-1">"${issue.description}"</p>
+                <p class="font-mono text-[8px] text-slate-500 font-semibold mt-0.5">${issue.address.split(',')[0]}</p>
               </div>
             </div>
           `, { 
@@ -345,9 +354,9 @@ export default function MapSection({
       ></div>
 
       {/* Floating Watermark logo in corner (Humble, professional, no tech-larping logs) */}
-      <div className="absolute bottom-6 left-6 z-10 p-2.5 rounded-lg bg-slate-950/80 backdrop-blur-md border border-slate-800 flex items-center gap-2 pointer-events-none shadow-xl">
+      <div className="absolute bottom-6 left-6 z-10 p-2.5 rounded-lg bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border border-slate-200 dark:border-slate-800 flex items-center gap-2 pointer-events-none shadow-sm dark:shadow-xl transition-colors duration-300">
         <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span className="text-[10px] font-bold text-slate-300 font-mono tracking-wider uppercase">
+        <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 font-mono tracking-wider uppercase">
           Live Wards Sync Connected
         </span>
       </div>

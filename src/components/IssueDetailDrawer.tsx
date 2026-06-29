@@ -32,6 +32,44 @@ const getRelativeTime = (timestamp: string | number): string => {
   return `${days}d ago`;
 };
 
+// Downscale image helper to prevent Firestore doc size issues
+const resizeImage = (file: File, maxWidth = 500, maxHeight = 500): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        resolve(dataUrl);
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
+};
+
 // Category mapping helper
 const categoryEmojiMap = {
   pothole: '🕳️',
@@ -347,13 +385,19 @@ export default function IssueDetailDrawer({
 
     setAfterPhotoLoading(true);
     try {
-      const imageRef = ref(storage, `issues/resolved_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`);
-      await uploadBytes(imageRef, file);
-      const url = await getDownloadURL(imageRef);
-      setAfterPhoto(url);
+      const resizedBase64 = await resizeImage(file);
+      try {
+        const imageRef = ref(storage, `issues/resolved_${Date.now()}_${Math.random().toString(36).substr(2, 9)}.jpg`);
+        await uploadString(imageRef, resizedBase64, 'data_url');
+        const url = await getDownloadURL(imageRef);
+        setAfterPhoto(url);
+      } catch (err) {
+        console.error("Firebase Storage failed, falling back to base64:", err);
+        setAfterPhoto(resizedBase64);
+      }
     } catch (err) {
       console.error(err);
-      setError('Failed to upload image. Please try again.');
+      setError('Failed to process image. Please try again.');
     } finally {
       setAfterPhotoLoading(false);
     }
@@ -383,7 +427,7 @@ export default function IssueDetailDrawer({
       if (!url) return false;
       const cleanUrl = url.trim();
       if (cleanUrl === '' || cleanUrl === 'null' || cleanUrl === 'undefined') return false;
-      return cleanUrl.startsWith('data:');
+      return cleanUrl.startsWith('data:') || cleanUrl.startsWith('http');
     };
 
     if (isUploaded(issue.resolvedImageUrl)) {
@@ -398,32 +442,32 @@ export default function IssueDetailDrawer({
   const displayImage = getDisplayImage();
 
   return (
-    <div className="fixed inset-y-0 right-0 z-40 w-full md:w-[480px] lg:w-[440px] xl:w-[480px] bg-slate-900 border-l border-slate-800 shadow-2xl flex flex-col transition-all duration-300 transform translate-x-0 overflow-hidden">
+    <div className="fixed inset-y-0 right-0 z-40 w-full md:w-[480px] lg:w-[440px] xl:w-[480px] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col transition-all duration-300 transform translate-x-0 overflow-hidden">
       
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/80 backdrop-blur-sm shrink-0 z-10">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm shrink-0 z-10 transition-colors duration-300">
         <div>
-          <span className="text-[10px] font-bold text-blue-400 tracking-widest uppercase bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-md">
+          <span className="font-mono text-[10px] font-bold text-blue-600 dark:text-blue-400 tracking-widest uppercase bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 px-2 py-0.5 rounded-md">
             {issue.category} {categoryEmojiMap[issue.category as keyof typeof categoryEmojiMap]}
           </span>
-          <h3 className="text-base font-bold text-slate-100 mt-1.5 leading-tight flex items-center gap-1.5">
+          <h3 className="font-display text-base font-bold text-slate-900 dark:text-slate-100 mt-1.5 leading-tight flex items-center gap-1.5">
             Report #{issue.id?.slice(0, 6)}
           </h3>
         </div>
         <button 
           onClick={onClose}
-          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition"
+          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
         >
           <X className="w-5 h-5" />
         </button>
       </div>
 
       {/* Main Container Scrollable */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-5">
+      <div className="flex-1 overflow-y-auto p-6 space-y-5 bg-white dark:bg-slate-900 transition-colors duration-300">
         
         {/* Error Notification */}
         {error && (
-          <div id="drawer-error-alert" className="flex items-start gap-3 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm transition-all duration-200 shadow-sm animate-fade-in shrink-0">
+          <div id="drawer-error-alert" className="flex items-start gap-3 p-3.5 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-rose-600 dark:text-rose-400 text-sm transition-all duration-200 shadow-sm animate-fade-in shrink-0 font-sans">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <span className="font-semibold leading-snug">{error}</span>
           </div>
@@ -433,76 +477,117 @@ export default function IssueDetailDrawer({
         <div className="flex flex-col gap-3">
           {issue.resolvedImageUrl ? (
             <div className="grid grid-cols-2 gap-2">
-              <div className="relative rounded-2xl overflow-hidden border border-slate-800 h-40 bg-slate-950 shadow-lg">
+              <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 h-40 bg-slate-100 dark:bg-slate-950 shadow-sm transition-colors duration-300">
                 <img src={issue.imageUrl} alt="Before" className="w-full h-full object-cover" />
                 <div className="absolute top-2 left-2 z-10">
-                  <span className="bg-slate-950/80 backdrop-blur-md border border-slate-800 px-2 py-0.5 rounded-md text-[9px] font-bold text-slate-300">Before</span>
+                  <span className="bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border border-slate-200 dark:border-slate-800 px-2 py-0.5 rounded-md font-mono text-[9px] font-bold text-slate-700 dark:text-slate-300">Before</span>
                 </div>
               </div>
-              <div className="relative rounded-2xl overflow-hidden border border-emerald-900/50 h-40 bg-slate-950 shadow-lg">
+              <div className="relative rounded-2xl overflow-hidden border border-emerald-200 dark:border-emerald-900/50 h-40 bg-emerald-50 dark:bg-slate-950 shadow-sm transition-colors duration-300">
                 <img src={issue.resolvedImageUrl} alt="After" className="w-full h-full object-cover" />
                 <div className="absolute top-2 right-2 z-10">
-                  <span className="bg-emerald-950/90 backdrop-blur-md border border-emerald-800 px-2 py-0.5 rounded-md text-[9px] font-bold text-emerald-400">After</span>
+                  <span className="bg-emerald-50/90 dark:bg-emerald-950/90 backdrop-blur-md border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-md font-mono text-[9px] font-bold text-emerald-600 dark:text-emerald-400">After</span>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="relative rounded-2xl overflow-hidden border border-slate-800 h-48 bg-slate-950 shrink-0 shadow-lg flex items-center justify-center">
+            <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 h-48 bg-slate-100 dark:bg-slate-950 shrink-0 shadow-sm flex items-center justify-center transition-colors duration-300">
               {issue.imageUrl && (issue.imageUrl.startsWith('data:') || issue.imageUrl.startsWith('http')) ? (
                 <>
                   <img src={issue.imageUrl} alt="Civic issue photograph" className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 dark:from-slate-950/90 via-transparent to-transparent"></div>
                   
                   {/* Severity tag */}
                   <div className="absolute top-4 left-4 z-10">
-                    <span className="bg-slate-950/80 backdrop-blur-md border border-slate-800 px-2.5 py-1 rounded-full text-[10px] font-bold">
+                    <span className="bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border border-slate-200 dark:border-slate-800 px-2.5 py-1 rounded-full font-mono text-[10px] font-bold text-slate-900 dark:text-white transition-colors duration-300">
                       {severityLabelMap[issue.severity as keyof typeof severityLabelMap]}
                     </span>
                   </div>
                 </>
               ) : (
-                <span className="text-xs text-slate-500 font-medium">No image uploaded</span>
+                <span className="text-lg text-slate-500 font-accent">No image uploaded. Take a picture next time!</span>
               )}
             </div>
           )}
           
-          {/* Address */}
-          <div className="flex items-center gap-1.5 px-1">
-            <MapPin className="w-4 h-4 text-blue-500 shrink-0" />
-            <p className="text-xs text-slate-400 truncate font-medium">{issue.address}</p>
+          {/* Address & Geo Location */}
+          <div className="flex flex-col gap-1 px-1">
+            <div className="flex items-center gap-1.5">
+              <MapPin className="w-4 h-4 text-blue-500 shrink-0" />
+              <p className="text-xs text-slate-700 dark:text-slate-400 font-medium leading-tight font-sans">{issue.address}</p>
+            </div>
+            <p className="text-[10px] text-slate-500 pl-5.5 font-mono">
+              Geo: {issue.lat.toFixed(6)}, {issue.lng.toFixed(6)}
+            </p>
           </div>
         </div>
 
         {/* Core Metadata */}
-        <div className={`p-4 rounded-xl bg-slate-950 border-l-4 ${severityBorderColors[issue.severity as keyof typeof severityBorderColors]} space-y-2`}>
-          <div className="flex items-center justify-between text-xs text-slate-400">
-            <span className="flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5 text-slate-500" />
-              {getRelativeTime(issue.createdAt)}
-            </span>
-            <span className="font-semibold text-slate-300">
-              By: {issue.isAnonymous ? 'Anonymous' : issue.reporterName}
-            </span>
+        <div className={`p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border-l-4 ${severityBorderColors[issue.severity as keyof typeof severityBorderColors]} space-y-3 transition-colors duration-300 shadow-sm dark:shadow-none`}>
+          <div className="grid grid-cols-2 gap-y-3 text-xs text-slate-600 dark:text-slate-400 font-sans">
+            <div className="flex flex-col gap-0.5">
+              <span className="font-mono text-[10px] font-bold text-slate-500 uppercase tracking-wider">Reporter</span>
+              <span className="font-semibold text-slate-900 dark:text-slate-300 truncate">
+                {issue.isAnonymous ? 'Anonymous' : issue.reporterName}
+              </span>
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <span className="font-mono text-[10px] font-bold text-slate-500 uppercase tracking-wider">Officer</span>
+              <span className="font-semibold text-slate-900 dark:text-slate-300 truncate">
+                {issue.status === 'Resolved' || issue.status === 'Closed' 
+                  ? (issue.activityLog.slice().reverse().find(log => log.action.includes('Resolved') || log.action.includes('Closed'))?.by || 'Assigned Officer') 
+                  : (issue.status === 'In Progress' ? (issue.activityLog.slice().reverse().find(log => log.action.includes('In Progress'))?.by || 'Assigned Officer') : 'Unassigned')}
+              </span>
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <span className="font-mono text-[10px] font-bold text-slate-500 uppercase tracking-wider">Status</span>
+              <span className={`font-bold ${
+                issue.status === 'Resolved' ? 'text-emerald-600 dark:text-emerald-400' : 
+                issue.status === 'In Progress' ? 'text-blue-600 dark:text-blue-400' :
+                'text-amber-600 dark:text-amber-400'
+              }`}>
+                {issue.status}
+              </span>
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <span className="font-mono text-[10px] font-bold text-slate-500 uppercase tracking-wider">Votes</span>
+              <span className="font-bold text-slate-900 dark:text-slate-300">
+                {issue.verificationCount}
+              </span>
+            </div>
+            <div className="flex flex-col gap-0.5 col-span-2">
+              <span className="font-mono text-[10px] font-bold text-slate-500 uppercase tracking-wider">Department</span>
+              <span className="font-semibold text-blue-600 dark:text-blue-400 leading-snug">
+                {issue.department}
+              </span>
+            </div>
           </div>
-          <p className="text-sm text-slate-100 font-sans leading-relaxed">
-            "{issue.description}"
-          </p>
+          
+          <div className="pt-2 border-t border-slate-200 dark:border-slate-800/50 mt-2 transition-colors duration-300">
+            <p className="text-sm text-slate-800 dark:text-slate-100 font-sans leading-relaxed">
+              "{issue.description}"
+            </p>
+            <div className="flex items-center gap-1 mt-2 font-mono text-[10px] text-slate-500 font-medium">
+              <Calendar className="w-3.5 h-3.5" />
+              Reported {getRelativeTime(issue.createdAt)}
+            </div>
+          </div>
         </div>
 
         {/* AI Department routing & explanation */}
-        <div className="p-4 rounded-xl bg-slate-950 border border-slate-850 space-y-2">
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 space-y-2 transition-colors duration-300 shadow-sm dark:shadow-none">
           <div className="flex items-center gap-2">
-            <Shield className="w-4 h-4 text-emerald-400" />
-            <span className="text-xs font-bold text-slate-300 tracking-wide uppercase">
+            <Shield className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+            <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-300 tracking-wide uppercase">
               Smart Action routing
             </span>
           </div>
-          <div className="text-xs">
-            <p className="text-slate-200 font-semibold text-[13px]">
-              Assigned to: <span className="text-blue-400">{issue.department}</span>
+          <div className="text-xs font-sans">
+            <p className="text-slate-900 dark:text-slate-200 font-semibold text-[13px]">
+              Assigned to: <span className="text-blue-600 dark:text-blue-400">{issue.department}</span>
             </p>
             {issue.departmentExplanation && (
-              <p className="text-slate-400 mt-1 leading-relaxed">
+              <p className="text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
                 {issue.departmentExplanation}
               </p>
             )}
@@ -510,30 +595,30 @@ export default function IssueDetailDrawer({
         </div>
 
         {/* Verification Hub */}
-        <div className="p-4 rounded-xl bg-slate-950 border border-slate-850 space-y-3">
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 space-y-3 transition-colors duration-300 shadow-sm dark:shadow-none">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Award className="w-4.5 h-4.5 text-blue-400" />
-              <span className="text-xs font-bold text-slate-300 uppercase tracking-wide">
+              <Award className="w-4.5 h-4.5 text-blue-500 dark:text-blue-400" />
+              <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-300 uppercase tracking-wide">
                 Community Verification ({issue.verificationCount})
               </span>
             </div>
             {issue.verificationCount >= 3 && (
-              <span className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse-custom">
+              <span className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-bold font-mono text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse-custom">
                 ✓ Community Verified
               </span>
             )}
           </div>
 
-          <p className="text-xs text-slate-400 leading-relaxed">
+          <p className="font-sans text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
             Wards require consensus to bump urgency. Let officers know this problem is active!
           </p>
 
           {verificationFeedback && (
-            <div className={`p-2.5 rounded-lg border text-xs flex items-center gap-1.5 ${
+            <div className={`p-2.5 rounded-lg border text-xs font-sans flex items-center gap-1.5 transition-colors duration-300 ${
               verificationStatus === 'matched' 
-                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' 
-                : 'bg-red-500/10 border-red-500/20 text-red-400'
+                ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400' 
+                : 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400'
             }`}>
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{verificationFeedback}</span>
@@ -543,7 +628,7 @@ export default function IssueDetailDrawer({
           {/* Citizen Verification Buttons */}
           {currentUser ? (
             isAlreadyVerified ? (
-              <div className="py-2 text-center text-xs font-semibold text-slate-500 border border-slate-800 bg-slate-900/20 rounded-lg">
+              <div className="py-2 text-center font-sans text-xs font-semibold text-slate-500 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/20 rounded-lg">
                 ✓ You have verified this issue
               </div>
             ) : (
@@ -553,7 +638,7 @@ export default function IssueDetailDrawer({
                   type="button"
                   onClick={handleVerify}
                   disabled={verifying}
-                  className="w-full py-2 rounded-lg bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5"
+                  className="w-full py-2 rounded-lg bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-semibold font-sans text-xs transition flex items-center justify-center gap-1.5 shadow-sm"
                 >
                   {verifying ? (
                     <Loader className="w-3.5 h-3.5 animate-spin" />
@@ -576,7 +661,7 @@ export default function IssueDetailDrawer({
                   <button
                     type="button"
                     disabled={verificationStatus === 'matching'}
-                    className="w-full py-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-blue-500/30 text-slate-300 font-semibold text-xs transition flex items-center justify-center gap-1.5"
+                    className="w-full py-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-500/30 text-slate-700 dark:text-slate-300 font-semibold font-sans text-xs transition flex items-center justify-center gap-1.5 shadow-sm dark:shadow-none"
                   >
                     {verificationStatus === 'matching' ? (
                       <Loader className="w-3.5 h-3.5 animate-spin" />
@@ -589,23 +674,23 @@ export default function IssueDetailDrawer({
               </div>
             )
           ) : (
-            <div className="py-2 text-center text-xs text-slate-500 border border-slate-850 rounded-lg bg-slate-950/40">
+            <div className="py-2 text-center font-sans text-xs text-slate-500 border border-slate-200 dark:border-slate-850 rounded-lg bg-white dark:bg-slate-950/40">
               Sign in to verify and earn community points
             </div>
           )}
         </div>
 
         {/* Complaint Letter Generator (Generates complaint letter text) */}
-        <div className="p-4 rounded-xl bg-slate-950 border border-slate-850 space-y-3">
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 space-y-3 transition-colors duration-300 shadow-sm dark:shadow-none">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-300 uppercase tracking-wide flex items-center gap-1.5">
+            <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1.5">
               <FileText className="w-4.5 h-4.5 text-amber-500" />
               Official Grievance Document
             </span>
             <button
               onClick={handleGenerateLetter}
               disabled={loadingLetter}
-              className="text-[10px] font-bold text-blue-400 hover:text-blue-300 transition flex items-center gap-1"
+              className="font-mono text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition flex items-center gap-1"
             >
               {loadingLetter ? (
                 <Loader className="w-3 h-3 animate-spin" />
@@ -616,7 +701,7 @@ export default function IssueDetailDrawer({
             </button>
           </div>
 
-          <p className="text-xs text-slate-400 leading-relaxed">
+          <p className="font-sans text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
             Instantly draft a professional, ready-to-sign formal complaint addressed to municipal authorities.
           </p>
 
@@ -627,14 +712,14 @@ export default function IssueDetailDrawer({
                   readOnly
                   rows={6}
                   value={letterDraft}
-                  className="w-full p-3 bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono rounded-lg resize-none leading-relaxed"
+                  className="w-full p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 text-xs font-mono rounded-lg resize-none leading-relaxed transition-colors duration-300"
                 />
                 <button
                   onClick={copyToClipboard}
-                  className="absolute bottom-3 right-3 p-1.5 rounded bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition border border-slate-800 flex items-center gap-1"
+                  className="absolute bottom-3 right-3 p-1.5 rounded bg-white dark:bg-slate-950 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition border border-slate-200 dark:border-slate-800 flex items-center gap-1"
                 >
                   <Copy className="w-3.5 h-3.5" />
-                  <span className="text-[10px] font-semibold">{copySuccess ? 'Copied!' : 'Copy'}</span>
+                  <span className="font-sans text-[10px] font-semibold">{copySuccess ? 'Copied!' : 'Copy'}</span>
                 </button>
               </div>
             </div>
@@ -642,18 +727,18 @@ export default function IssueDetailDrawer({
         </div>
 
         {/* Comments Section */}
-        <div className="p-4 rounded-xl bg-slate-950 border border-slate-850 space-y-3">
-          <span className="text-xs font-bold text-slate-300 uppercase tracking-wide block">
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 space-y-3 transition-colors duration-300 shadow-sm dark:shadow-none">
+          <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-300 uppercase tracking-wide block">
             Community Comments ({issue.comments?.length || 0})
           </span>
-          <div className="space-y-3">
+          <div className="space-y-3 font-sans">
             {(issue.comments || []).map((comment) => (
-              <div key={comment.id} className="p-3 bg-slate-900 border border-slate-800 rounded-lg text-xs">
+              <div key={comment.id} className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs transition-colors duration-300">
                 <div className="flex justify-between items-center mb-1">
-                  <span className="font-bold text-slate-300">{comment.by}</span>
-                  <span className="text-slate-500 text-[10px]">{getRelativeTime(comment.timestamp)}</span>
+                  <span className="font-bold text-slate-900 dark:text-slate-300">{comment.by}</span>
+                  <span className="font-mono text-slate-500 text-[10px]">{getRelativeTime(comment.timestamp)}</span>
                 </div>
-                <p className="text-slate-200">{comment.text}</p>
+                <p className="text-slate-700 dark:text-slate-200">{comment.text}</p>
               </div>
             ))}
             
@@ -688,41 +773,41 @@ export default function IssueDetailDrawer({
                   type="text" 
                   name="commentText"
                   placeholder="Add a public comment..." 
-                  className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500"
+                  className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:border-blue-500 transition-colors duration-300"
                 />
-                <button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded-lg text-xs font-bold">Post</button>
+                <button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-sm">Post</button>
               </form>
             ) : (
-              <div className="text-xs text-slate-500 text-center py-2 bg-slate-900/50 rounded-lg">Sign in to comment</div>
+              <div className="text-xs text-slate-500 text-center py-2 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-lg transition-colors duration-300">Sign in to comment</div>
             )}
           </div>
         </div>
 
         {/* ACTIVITY LOG (Timeline) */}
-        <div className="p-4 rounded-xl bg-slate-950 border border-slate-850 space-y-4">
-          <span className="text-xs font-bold text-slate-300 uppercase tracking-wide block">
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 space-y-4 transition-colors duration-300 shadow-sm dark:shadow-none">
+          <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-300 uppercase tracking-wide block">
             Resolution Progress History
           </span>
 
           {issue.resolutionNotes && (
-            <div className="p-3 bg-emerald-950/30 border border-emerald-900/50 rounded-lg text-xs space-y-1">
-              <span className="font-bold text-emerald-400">Official Resolution Notes:</span>
-              <p className="text-slate-200">{issue.resolutionNotes}</p>
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 rounded-lg text-xs space-y-1 font-sans">
+              <span className="font-bold text-emerald-600 dark:text-emerald-400">Official Resolution Notes:</span>
+              <p className="text-slate-700 dark:text-slate-200">{issue.resolutionNotes}</p>
             </div>
           )}
           
-          <div className="relative pl-4 border-l-2 border-slate-800 space-y-4">
+          <div className="relative pl-4 border-l-2 border-slate-200 dark:border-slate-800 space-y-4">
             {issue.activityLog.slice().reverse().map((log, index) => (
               <div key={index} className="relative text-xs">
                 {/* Timeline Dot */}
-                <div className={`absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full border-2 border-slate-950 ${
-                  index === 0 ? 'bg-blue-500 ring-4 ring-blue-500/15 scale-110' : 'bg-slate-700'
+                <div className={`absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full border-2 border-slate-50 dark:border-slate-950 ${
+                  index === 0 ? 'bg-blue-500 ring-4 ring-blue-500/15 scale-110' : 'bg-slate-300 dark:bg-slate-700'
                 }`}></div>
                 
-                <p className="text-slate-200 font-medium font-sans leading-relaxed">
+                <p className="text-slate-800 dark:text-slate-200 font-medium font-sans leading-relaxed">
                   {log.action}
                 </p>
-                <div className="flex items-center gap-1.5 text-[10px] text-slate-500 mt-0.5">
+                <div className="flex items-center gap-1.5 font-mono text-[10px] text-slate-500 mt-0.5">
                   <span>By: {log.by}</span>
                   <span>•</span>
                   <span>{getRelativeTime(log.timestamp)}</span>
@@ -734,17 +819,17 @@ export default function IssueDetailDrawer({
 
         {/* AUTHORITY CONTROLS (Only visible to Officers/Admins) */}
         {isAuthority && (
-          <div className="p-4 rounded-xl bg-slate-950 border-2 border-amber-500/10 space-y-4">
-            <div className="flex items-center gap-1.5 text-amber-400">
+          <div className="p-4 rounded-xl bg-white dark:bg-slate-950 border-2 border-amber-500/10 space-y-4 transition-colors duration-300 shadow-sm dark:shadow-none">
+            <div className="flex items-center gap-1.5 text-amber-500 dark:text-amber-400">
               <Shield className="w-4.5 h-4.5" />
-              <span className="text-xs font-bold uppercase tracking-wider">
+              <span className="font-mono text-xs font-bold uppercase tracking-wider">
                 Official Authority Work Desk
               </span>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3 font-sans">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">Set Resolution Status</label>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Set Resolution Status</label>
                 <div className="flex gap-1">
                   {(['Reported', 'Verified', 'In Progress', 'Resolved', 'Closed'] as CivicIssue['status'][]).map((st) => (
                     <button
@@ -754,8 +839,8 @@ export default function IssueDetailDrawer({
                       disabled={updatingStatus}
                       className={`flex-1 py-1 px-1.5 rounded border text-[10px] font-bold text-center transition ${
                         issue.status === st 
-                          ? 'bg-amber-600/10 border-amber-500 text-amber-400' 
-                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-300'
+                          ? 'bg-amber-50 border-amber-300 text-amber-600 dark:bg-amber-600/10 dark:border-amber-500 dark:text-amber-400' 
+                          : 'bg-slate-50 border-slate-200 text-slate-500 hover:text-slate-800 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-400 dark:hover:text-slate-300'
                       }`}
                     >
                       {st}
@@ -768,31 +853,31 @@ export default function IssueDetailDrawer({
               {issue.status !== 'Resolved' && (
                 <div className="space-y-2">
                   <div className="space-y-1">
-                    <label className="text-[11px] text-slate-300 font-semibold">Resolution Notes (Optional)</label>
+                    <label className="text-[11px] text-slate-700 dark:text-slate-300 font-semibold">Resolution Notes (Optional)</label>
                     <textarea 
                       value={resolutionNotesInput}
                       onChange={(e) => setResolutionNotesInput(e.target.value)}
                       placeholder="Explain how this issue was resolved..."
-                      className="w-full bg-slate-900 border border-slate-800 rounded px-2 py-1.5 text-xs text-slate-200 focus:border-amber-500 focus:outline-none resize-none"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded px-2 py-1.5 text-xs text-slate-900 dark:text-slate-200 focus:border-amber-500 focus:outline-none resize-none transition-colors duration-300"
                       rows={2}
                     />
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-slate-300 font-semibold">
+                    <span className="text-[11px] text-slate-700 dark:text-slate-300 font-semibold">
                       Add "After Fix" Photo
                     </span>
                     {afterPhoto && (
                       <button 
                         type="button"
                         onClick={() => setAfterPhoto(null)} 
-                        className="text-[10px] text-rose-400 hover:underline"
+                        className="text-[10px] text-rose-500 dark:text-rose-400 hover:underline"
                       >
                         Remove
                       </button>
                     )}
                   </div>
                   {afterPhoto ? (
-                    <div className="relative rounded-lg overflow-hidden border border-slate-800 h-24 bg-slate-900">
+                    <div className="relative rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 h-24 bg-slate-100 dark:bg-slate-900 transition-colors duration-300">
                       <img src={afterPhoto} alt="After Fix" className="w-full h-full object-cover" />
                     </div>
                   ) : (
@@ -807,7 +892,7 @@ export default function IssueDetailDrawer({
                       />
                       <button
                         type="button"
-                        className="w-full py-1.5 rounded bg-slate-900 border border-dashed border-slate-800 text-[10px] font-semibold text-slate-400 hover:text-slate-300 transition flex items-center justify-center gap-1"
+                        className="w-full py-1.5 rounded bg-slate-50 dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 text-[10px] font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-300 transition flex items-center justify-center gap-1 transition-colors duration-300"
                       >
                         <Camera className="w-3.5 h-3.5" />
                         Upload Completion Photo
@@ -818,7 +903,7 @@ export default function IssueDetailDrawer({
                     <button
                       type="button"
                       onClick={() => handleStatusChange('Resolved')}
-                      className="w-full py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition shadow-lg shadow-emerald-600/10"
+                      className="w-full py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] transition shadow-sm"
                     >
                       ✓ Finalize Resolution with Photo
                     </button>
@@ -831,18 +916,18 @@ export default function IssueDetailDrawer({
 
         {/* ADMIN CONTROLS (Delete from Firestore, full CRUD) */}
         {isAdmin && (
-          <div className="p-4 rounded-xl bg-slate-950 border-2 border-rose-500/10 flex items-center justify-between">
+          <div className="p-4 rounded-xl bg-white dark:bg-slate-950 border-2 border-rose-500/10 flex items-center justify-between transition-colors duration-300 shadow-sm dark:shadow-none">
             <div className="flex flex-col gap-0.5">
-              <span className="text-xs font-bold text-rose-400 uppercase tracking-wide">
+              <span className="font-mono text-xs font-bold text-rose-500 dark:text-rose-400 uppercase tracking-wide">
                 Admin Panel Control
               </span>
-              <span className="text-[10px] text-slate-500">
+              <span className="font-sans text-[10px] text-slate-500">
                 Remove fraudulent or duplicate reports
               </span>
             </div>
             <button
               onClick={handleDeleteReport}
-              className="px-3 py-1.5 bg-rose-600/10 border border-rose-600/30 text-rose-400 hover:bg-rose-600/20 rounded-lg text-xs font-bold transition flex items-center gap-1 shrink-0"
+              className="font-sans px-3 py-1.5 bg-rose-50 dark:bg-rose-600/10 border border-rose-200 dark:border-rose-600/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-600/20 rounded-lg text-xs font-bold transition flex items-center gap-1 shrink-0"
             >
               <Trash2 className="w-4 h-4" />
               Delete Report

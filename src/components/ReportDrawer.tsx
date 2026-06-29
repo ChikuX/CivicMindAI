@@ -445,22 +445,22 @@ export default function ReportDrawer({ isOpen, onClose, currentUser, onReportSub
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-y-0 right-0 z-40 w-full md:w-[480px] lg:w-[440px] xl:w-[480px] bg-slate-900 border-l border-slate-800 shadow-2xl flex flex-col transition-all duration-300 transform translate-x-0 overflow-hidden">
+    <div className="fixed inset-y-0 right-0 z-40 w-full md:w-[480px] lg:w-[440px] xl:w-[480px] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col transition-all duration-300 transform translate-x-0 overflow-hidden">
       
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/80 backdrop-blur-sm z-10 shrink-0">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm z-10 shrink-0 transition-colors duration-300">
         <div>
-          <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+          <h3 className="font-display text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-blue-500" />
             Report a Civic Issue
           </h3>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Spotted something broken? let's fix it.
           </p>
         </div>
         <button 
           onClick={onClose}
-          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition"
+          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
         >
           <X className="w-5 h-5" />
         </button>
@@ -468,27 +468,27 @@ export default function ReportDrawer({ isOpen, onClose, currentUser, onReportSub
 
       {/* Success View */}
       {showSuccess ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-8 bg-slate-950 text-center animate-fade-in">
-          <div className="w-20 h-20 bg-emerald-500/10 border-2 border-emerald-500 rounded-full flex items-center justify-center mb-6">
+        <div className="flex-1 flex flex-col items-center justify-center p-8 bg-slate-50 dark:bg-slate-950 text-center animate-fade-in transition-colors duration-300">
+          <div className="w-20 h-20 bg-emerald-50 dark:bg-emerald-500/10 border-2 border-emerald-500 rounded-full flex items-center justify-center mb-6">
             <svg className="w-10 h-10 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path className="animate-draw-checkmark" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h4 className="text-2xl font-bold text-slate-100">Report Lodged!</h4>
-          <p className="text-sm text-slate-400 max-w-sm mt-2">
+          <h4 className="font-display text-2xl font-bold text-slate-900 dark:text-slate-100">Report Lodged!</h4>
+          <p className="font-sans text-sm text-slate-600 dark:text-slate-400 max-w-sm mt-2">
             Thank you! Your issue is now on the map. We've routed it and generated a formal grievance letter.
           </p>
           {currentUser && (
-            <div className="mt-6 px-4 py-2.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold flex items-center gap-1.5">
+            <div className="mt-6 px-4 py-2.5 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-semibold flex items-center gap-1.5 font-mono">
               🚀 +10 Reporter Points Awarded!
             </div>
           )}
         </div>
       ) : (
         /* Form Content */
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+        <div className="flex-1 overflow-y-auto p-6 space-y-5 bg-white dark:bg-slate-900 transition-colors duration-300">
           {error && (
-            <div className="flex items-start gap-3 p-3.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+            <div className="flex items-start gap-3 p-3.5 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 text-xs font-sans">
               <AlertCircle className="w-4.5 h-4.5 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
@@ -497,17 +497,17 @@ export default function ReportDrawer({ isOpen, onClose, currentUser, onReportSub
           {/* STEP 1: PHOTO UPLOAD */}
           {step === 1 && (
             <div className="space-y-4 py-6">
-              <h4 className="text-sm font-semibold text-slate-300">
+              <h4 className="font-sans text-sm font-semibold text-slate-800 dark:text-slate-300">
                 First, snap or upload a photo of the issue
               </h4>
 
-              <div className="relative border-2 border-dashed border-slate-700 hover:border-blue-500/50 rounded-2xl p-10 flex flex-col items-center justify-center text-center bg-slate-950/60 transition group cursor-pointer overflow-hidden min-h-[220px]">
+              <div className="relative border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-blue-500/50 rounded-2xl p-10 flex flex-col items-center justify-center text-center bg-slate-50 dark:bg-slate-950/60 transition group cursor-pointer overflow-hidden min-h-[220px]">
                 {analyzing ? (
                   <div className="space-y-4 py-4 flex flex-col items-center justify-center">
                     <Loader className="w-8 h-8 text-blue-500 animate-spin" />
                     <div className="space-y-1">
-                      <p className="text-sm font-semibold text-slate-200">Analyzing your photo... 🔍</p>
-                      <p className="text-xs text-slate-500">Gemini Vision is classifying the damage & severity...</p>
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 font-sans">Analyzing your photo... 🔍</p>
+                      <p className="text-xs text-slate-500 font-sans">Gemini Vision is classifying the damage & severity...</p>
                     </div>
                   </div>
                 ) : (
@@ -519,13 +519,13 @@ export default function ReportDrawer({ isOpen, onClose, currentUser, onReportSub
                       onChange={handleFileChange}
                       className="absolute inset-0 opacity-0 cursor-pointer"
                     />
-                    <div className="p-4 rounded-full bg-slate-900 border border-slate-800 text-slate-400 group-hover:text-blue-400 group-hover:scale-110 transition mb-4">
+                    <div className="p-4 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 group-hover:text-blue-500 dark:group-hover:text-blue-400 group-hover:scale-110 transition mb-4">
                       <Camera className="w-7 h-7" />
                     </div>
-                    <p className="text-sm font-medium text-slate-200">
+                    <p className="text-sm font-medium text-slate-800 dark:text-slate-200 font-sans">
                       Tap to take photo or upload
                     </p>
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-xs text-slate-500 mt-1 font-sans">
                       Supports direct camera capture on mobile (JPEG, PNG)
                     </p>
                   </>
@@ -533,10 +533,10 @@ export default function ReportDrawer({ isOpen, onClose, currentUser, onReportSub
               </div>
 
               {/* Friendly empty states helper */}
-              <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex gap-3 text-xs text-slate-400">
-                <Sparkles className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+              <div className="p-4 rounded-xl bg-blue-50 dark:bg-slate-900/60 border border-blue-100 dark:border-slate-800 flex gap-3 text-xs text-slate-600 dark:text-slate-400 font-sans">
+                <Sparkles className="w-5 h-5 text-blue-500 dark:text-blue-400 shrink-0 mt-0.5" />
                 <p>
-                  <strong className="text-slate-300 font-semibold">Gemini Vision AI</strong> automatically extracts the category, estimates how critical the issue is, and drafts a description in seconds!
+                  <strong className="text-slate-900 dark:text-slate-300 font-semibold">Gemini Vision AI</strong> automatically extracts the category, estimates how critical the issue is, and drafts a description in seconds!
                 </p>
               </div>
             </div>
@@ -544,14 +544,14 @@ export default function ReportDrawer({ isOpen, onClose, currentUser, onReportSub
 
           {/* STEP 2: DETAILS & LOCATION MAP */}
           {step === 2 && (
-            <form onSubmit={handleSubmit} className="space-y-5 pb-6">
+            <form onSubmit={handleSubmit} className="space-y-5 pb-6 font-sans">
               
               {/* Photo Preview Thumbnail */}
               {image && (
-                <div className="relative rounded-xl overflow-hidden border border-slate-800 h-36 bg-slate-950 shrink-0">
+                <div className="relative rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 h-36 bg-slate-100 dark:bg-slate-950 shrink-0">
                   <img src={image} alt="Civic defect preview" className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent"></div>
-                  <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-blue-500/10 backdrop-blur-md border border-blue-500/20 px-2.5 py-1 rounded-lg text-[10px] font-bold text-blue-400">
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 dark:from-slate-950/80 via-transparent to-transparent"></div>
+                  <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-blue-500/10 backdrop-blur-md border border-blue-500/20 px-2.5 py-1 rounded-lg text-[10px] font-bold text-blue-100 dark:text-blue-400">
                     <Sparkles className="w-3.5 h-3.5" />
                     Gemini Scanned
                   </div>
@@ -561,7 +561,7 @@ export default function ReportDrawer({ isOpen, onClose, currentUser, onReportSub
                       setImage(null);
                       setStep(1);
                     }}
-                    className="absolute top-3 right-3 p-1.5 rounded-lg bg-slate-950/70 border border-slate-800 hover:bg-slate-900 text-slate-300 transition"
+                    className="absolute top-3 right-3 p-1.5 rounded-lg bg-slate-900/70 border border-slate-700 hover:bg-slate-900 text-slate-300 transition"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -571,11 +571,11 @@ export default function ReportDrawer({ isOpen, onClose, currentUser, onReportSub
               {/* Form Fields */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-300">Category</label>
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Category</label>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value as CivicIssue['category'])}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-lg text-slate-200 text-xs outline-none cursor-pointer"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-blue-500 rounded-lg text-slate-900 dark:text-slate-200 text-xs outline-none cursor-pointer"
                   >
                     <option value="pothole">🕳️ Pothole</option>
                     <option value="water leak">💧 Water Leak</option>
@@ -588,44 +588,44 @@ export default function ReportDrawer({ isOpen, onClose, currentUser, onReportSub
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-300">Severity</label>
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Severity</label>
                   <select
                     value={severity}
                     onChange={(e) => setSeverity(e.target.value as CivicIssue['severity'])}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-lg text-slate-200 text-xs outline-none cursor-pointer font-medium"
+                    className="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-blue-500 rounded-lg text-slate-900 dark:text-slate-200 text-xs outline-none cursor-pointer font-medium"
                   >
-                    <option value="low" className="text-emerald-400">🟢 Low Priority</option>
-                    <option value="medium" className="text-amber-400">🟡 Medium</option>
-                    <option value="high" className="text-orange-400">🟠 High</option>
-                    <option value="critical" className="text-rose-400">🔴 Critical</option>
+                    <option value="low" className="text-emerald-600 dark:text-emerald-400">🟢 Low Priority</option>
+                    <option value="medium" className="text-amber-600 dark:text-amber-400">🟡 Medium</option>
+                    <option value="high" className="text-orange-600 dark:text-orange-400">🟠 High</option>
+                    <option value="critical" className="text-rose-600 dark:text-rose-400">🔴 Critical</option>
                   </select>
                 </div>
               </div>
 
               {/* Description */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-300">Issue Description</label>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Issue Description</label>
                 <textarea
                   required
                   rows={2}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Describe the issue, damage, or location details..."
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 focus:border-blue-500 rounded-lg text-slate-200 text-xs outline-none resize-none"
+                  className="w-full px-3 py-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-blue-500 rounded-lg text-slate-900 dark:text-slate-200 text-xs outline-none resize-none"
                 />
               </div>
 
               {/* Location minimap (interactive) */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-slate-300 flex items-center gap-1">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
                     <MapPin className="w-4 h-4 text-blue-500" />
                     Verify Location (Drag pin to adjust)
                   </label>
                   <button
                     type="button"
                     onClick={detectLocation}
-                    className="text-[10px] font-bold text-blue-400 hover:text-blue-300 transition"
+                    className="font-mono text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 transition"
                   >
                     Recenter GPS
                   </button>
@@ -634,29 +634,29 @@ export default function ReportDrawer({ isOpen, onClose, currentUser, onReportSub
                 {/* Minimap div */}
                 <div 
                   ref={minimapRef}
-                  className="h-32 w-full rounded-xl border border-slate-800 bg-slate-950 relative overflow-hidden z-0"
+                  className="h-32 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 relative overflow-hidden z-0"
                 ></div>
 
                 {/* Pin Address Display */}
-                <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-850 flex items-center gap-2 text-[11px] text-slate-400">
+                <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 flex items-center gap-2 text-[11px] text-slate-600 dark:text-slate-400">
                   <MapPin className="w-4 h-4 text-blue-500 shrink-0" />
                   <span className="truncate">{address}</span>
                 </div>
               </div>
 
               {/* Reporter details */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-850 space-y-3">
+              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-slate-300">Reporter Identity</label>
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Reporter Identity</label>
                   <div className="flex items-center gap-1.5">
                     <input
                       type="checkbox"
                       id="anon-checkbox"
                       checked={isAnonymous}
                       onChange={(e) => setIsAnonymous(e.target.checked)}
-                      className="rounded border-slate-800 bg-slate-900 text-blue-500 focus:ring-0 outline-none w-3.5 h-3.5 cursor-pointer"
+                      className="rounded border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 text-blue-500 focus:ring-0 outline-none w-3.5 h-3.5 cursor-pointer"
                     />
-                    <label htmlFor="anon-checkbox" className="text-[10px] font-semibold text-slate-400 cursor-pointer">
+                    <label htmlFor="anon-checkbox" className="font-mono text-[10px] font-semibold text-slate-500 dark:text-slate-400 cursor-pointer">
                       Stay Anonymous
                     </label>
                   </div>
@@ -669,7 +669,7 @@ export default function ReportDrawer({ isOpen, onClose, currentUser, onReportSub
                     placeholder="Enter your name"
                     value={reporterName}
                     onChange={(e) => setReporterName(e.target.value)}
-                    className="w-full px-3 py-1.5 bg-slate-900 border border-slate-800 focus:border-blue-500 rounded-lg text-slate-200 text-xs outline-none"
+                    className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-blue-500 rounded-lg text-slate-900 dark:text-slate-200 text-xs outline-none"
                   />
                 )}
               </div>
@@ -678,7 +678,7 @@ export default function ReportDrawer({ isOpen, onClose, currentUser, onReportSub
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-2.5 mt-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-semibold text-sm transition shadow-lg shadow-blue-600/10 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-2.5 mt-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-semibold text-sm transition shadow-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? (
                   <>

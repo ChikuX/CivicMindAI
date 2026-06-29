@@ -1,8 +1,10 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-accent: "Caveat", cursive;
 }
 
 /* Custom dark-mode style for Leaflet map tiles */
@@ -17,17 +19,34 @@
 /* Leaflet control container custom styling */
 .leaflet-bar {
   border: none !important;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1) !important;
+  border-radius: 0.5rem !important;
+  overflow: hidden;
 }
 
 .leaflet-bar a {
-  background-color: #1e293b !important;
-  color: #f8fafc !important;
-  border-bottom: 1px solid #334155 !important;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-bottom: 1px solid #e2e8f0 !important;
   transition: all 0.2s;
 }
 
 .leaflet-bar a:hover {
+  background-color: #f8fafc !important;
+  color: #2563eb !important;
+}
+
+.dark .leaflet-bar {
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3) !important;
+}
+
+.dark .leaflet-bar a {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-bottom: 1px solid #334155 !important;
+}
+
+.dark .leaflet-bar a:hover {
   background-color: #334155 !important;
   color: #3b82f6 !important;
 }
@@ -39,16 +58,28 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: #f8fafc; /* slate-50 */
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #cbd5e1; /* slate-300 */
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #94a3b8; /* slate-400 */
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #0f172a; /* slate-950/900ish */
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155; /* slate-700 */
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569; /* slate-600 */
 }
 
 /* Pulse animation for active/in-progress issues */

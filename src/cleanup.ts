@@ -1,31 +1,23 @@
 import { db } from './firebase';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 
+// Disabled database seed/cleanup script.
+// Used previously to clear unsplash/picsum images and reset demo data.
+// Disable it per instructions instead of deleting.
+
 export async function cleanupDemoData() {
-  console.log('Running demo data cleanup...');
+  /*
   try {
     const issuesSnap = await getDocs(collection(db, 'issues'));
-    let deletedCount = 0;
-    
-    for (const issueDoc of issuesSnap.docs) {
-      const data = issueDoc.data();
-      const hasMockImg = data.imageUrl && (
-        data.imageUrl.includes('images.unsplash.com') ||
-        data.imageUrl.includes('picsum.photos')
-      );
-      const hasMockResolvedImg = data.resolvedImageUrl && (
-        data.resolvedImageUrl.includes('images.unsplash.com') ||
-        data.resolvedImageUrl.includes('picsum.photos')
-      );
-      
-      if (hasMockImg || hasMockResolvedImg) {
-        await deleteDoc(doc(db, 'issues', issueDoc.id));
-        deletedCount++;
+    for (const d of issuesSnap.docs) {
+      const data = d.data();
+      // Remove placeholder images from mock data
+      if (data.imageUrl && (data.imageUrl.includes('unsplash') || data.imageUrl.includes('picsum'))) {
+        await deleteDoc(doc(db, 'issues', d.id));
       }
     }
-    
-    console.log(`Cleaned up ${deletedCount} demo reports.`);
   } catch (err) {
-    console.error('Cleanup failed:', err);
+    console.error("Cleanup error:", err);
   }
+  */
 }

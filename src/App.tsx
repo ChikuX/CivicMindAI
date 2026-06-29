@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Map as MapIcon, BarChart2, Trophy, Sparkles, User, LogOut, LogIn,
-  Sun, Moon, Shield, Settings, Loader, Plus
+  Sun, Moon, Settings, Loader, Plus
 } from 'lucide-react';
 import { auth, db, OperationType, handleFirestoreError } from './firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, onSnapshot, collection, query, orderBy, getDocs, addDoc, deleteDoc, clearIndexedDbPersistence } from 'firebase/firestore';
 import { CivicIssue, UserProfile } from './types';
-import { cleanupDemoData } from './cleanup';
 
 // Component imports
+import Logo from './components/Logo';
+import LandingPage from './components/LandingPage';
 import MapSection from './components/MapSection';
 import DashboardSection from './components/DashboardSection';
 import LeaderboardSection from './components/LeaderboardSection';
@@ -59,12 +60,55 @@ export default function App() {
 
   // Configuration States
   const [heatmapEnabled, setHeatmapEnabled] = useState(false);
-  const [darkMode, setDarkMode] = useState(true); // Default dark dashboard
+  const [darkMode, setDarkMode] = useState(() => {
+    try {
+      const stored = localStorage.getItem('theme');
+      if (stored === 'dark' || stored === 'light') {
+        return stored === 'dark';
+      }
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    } catch (e) {
+      return true;
+    }
+  }); // Default dark dashboard
   const [mapCenter, setMapCenter] = useState<[number, number]>([12.9716, 77.5946]); // Bangalore Default
+  const [showLanding, setShowLanding] = useState(true);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+
+  // Sync dark mode to html class and local storage
+  useEffect(() => {
+    try {
+      localStorage.setItem('theme', darkMode ? 'dark' : 'light');
+      if (darkMode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    } catch (e) {}
+  }, [darkMode]);
 
   // Geolocate user on mount to center the map correctly
   useEffect(() => {
-    cleanupDemoData();
+    // Clear demo/testing cache on app start to ensure a clean state
+    try {
+      if (!localStorage.getItem('demo_data_cleared_v1')) {
+        clearIndexedDbPersistence(db).catch(console.warn);
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          // Only target local storage that we used for demo features
+          if (key && (key.includes('demo') || key.includes('test'))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(k => localStorage.removeItem(k));
+        localStorage.setItem('demo_data_cleared_v1', 'true');
+      }
+    } catch (e) {
+      console.error('Failed to clear cached demo data', e);
+    }
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -101,8 +145,17 @@ export default function App() {
 
   // 2. Auth State Observer
   useEffect(() => {
+    let unsubProfile: (() => void) | null = null;
+
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       setLoadingAuth(true);
+      
+      // Cleanup previous profile listener if it exists
+      if (unsubProfile) {
+        unsubProfile();
+        unsubProfile = null;
+      }
+
       if (authUser) {
         // Automatically redirect to dashboard on valid session load
         setCurrentTab('dashboard');
@@ -111,7 +164,7 @@ export default function App() {
         const userDocRef = doc(db, 'users', authUser.uid);
         
         // Listen to User Profile changes in real-time to update points/badges instantly
-        const unsubProfile = onSnapshot(userDocRef, (docSnap) => {
+        unsubProfile = onSnapshot(userDocRef, (docSnap) => {
           if (docSnap.exists()) {
             setCurrentUser(docSnap.data() as UserProfile);
           } else {
@@ -121,8 +174,8 @@ export default function App() {
             setCurrentUser({
               id: authUser.uid,
               email: email,
-              points: 10,
-              badges: ['First Report'],
+              points: 0,
+              badges: [],
               reportsCount: 0,
               verificationsCount: 0,
               role: fallbackRole
@@ -136,8 +189,8 @@ export default function App() {
           setCurrentUser({
             id: authUser.uid,
             email: email,
-            points: 10,
-            badges: ['First Report'],
+            points: 0,
+            badges: [],
             reportsCount: 0,
             verificationsCount: 0,
             role: fallbackRole
@@ -145,14 +198,16 @@ export default function App() {
           setLoadingAuth(false);
         });
 
-        return () => unsubProfile();
       } else {
         setCurrentUser(null);
         setLoadingAuth(false);
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      if (unsubProfile) unsubProfile();
+      unsubscribe();
+    };
   }, []);
 
   // Handle Log Out
@@ -178,7 +233,6 @@ export default function App() {
     setIsReporting(false);
     // Center map on issue coordinates
     setMapCenter([issue.lat, issue.lng]);
-    setCurrentTab('map');
   };
 
   // Trigger new report drawer opening
@@ -196,11 +250,50 @@ export default function App() {
     );
   }
 
+  if (showLanding) {
+    return (
+      <>
+        <LandingPage
+          issues={issues}
+          currentUser={currentUser}
+          onLoginClick={() => {
+            setAuthMode('login');
+            setIsAuthOpen(true);
+          }}
+          onGetStartedClick={() => {
+            if (currentUser) {
+              setShowLanding(false);
+              setCurrentTab('dashboard');
+            } else {
+              setAuthMode('signup');
+              setIsAuthOpen(true);
+            }
+          }}
+        />
+        {isAuthOpen && (
+          <AuthModal
+            isOpen={true}
+            initialMode={authMode}
+            onClose={() => setIsAuthOpen(false)}
+            onAuthSuccess={(profile) => {
+              setCurrentUser(profile);
+              setIsAuthOpen(false);
+              setShowLanding(false);
+              setCurrentTab('dashboard');
+            }}
+            hideClose={false}
+          />
+        )}
+      </>
+    );
+  }
+
   if (!currentUser) {
     return (
       <div className="h-screen w-screen bg-slate-950 flex items-center justify-center bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950">
         <AuthModal
           isOpen={true}
+          initialMode="login"
           onClose={() => {}} // Cannot close
           onAuthSuccess={(profile) => {
             setCurrentUser(profile);
@@ -214,25 +307,25 @@ export default function App() {
 
   return (
     <div className={`flex flex-col md:flex-row h-screen w-screen overflow-hidden ${
-      darkMode ? 'bg-slate-950 text-slate-100 dark' : 'bg-slate-50 text-slate-900'
-    } font-sans`}>
+      darkMode ? 'bg-slate-950 text-slate-100 dark' : 'bg-white text-slate-900'
+    } font-sans transition-colors duration-300`}>
       
       {/* 1. SIDEBAR (Collapsible, responsive, hidden on Mobile) */}
       <aside className={`hidden md:flex flex-col shrink-0 border-r transition-all duration-300 ${
-        darkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200'
+        darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
       } ${
-        // Collapsed (68px) on tablet, full (280px) on desktop
+        // Collapsed (68px) on tablet, full (260px) on desktop
         'w-[72px] lg:w-[260px]'
       }`}>
         
         {/* Brand Header */}
-        <div className="p-4 border-b border-slate-800/40 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 hover:bg-blue-500 transition shadow-lg shadow-blue-600/20 flex items-center justify-center shrink-0">
-            <Sparkles className="w-5.5 h-5.5 text-white" />
+        <div className={`p-4 border-b ${darkMode ? 'border-slate-800' : 'border-slate-200'} flex items-center gap-3`}>
+          <div className={`w-10 h-10 rounded-xl ${darkMode ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'} transition shadow-sm flex items-center justify-center shrink-0`}>
+            <Logo className="w-6 h-6" />
           </div>
           <div className="hidden lg:block truncate leading-none">
-            <h1 className="font-extrabold text-slate-100 text-base tracking-tight">CivicMind AI</h1>
-            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mt-0.5">
+            <h1 className={`font-display font-bold ${darkMode ? 'text-white' : 'text-slate-900'} text-base tracking-tight`}>CivicMind AI</h1>
+            <span className={`text-[9px] font-bold ${darkMode ? 'text-slate-500' : 'text-slate-400'} uppercase tracking-widest block mt-0.5`}>
               fixed faster.
             </span>
           </div>
@@ -328,7 +421,10 @@ export default function App() {
             </div>
           ) : (
             <button
-              onClick={() => setIsAuthOpen(true)}
+              onClick={() => {
+                setAuthMode('login');
+                setIsAuthOpen(true);
+              }}
               className="w-full py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs tracking-wide flex items-center justify-center gap-2 shadow-lg shadow-blue-600/10 transition"
             >
               <LogIn className="w-4 h-4" />
@@ -341,12 +437,12 @@ export default function App() {
       </aside>
 
       {/* 2. MOBILE TOP HEADER BRAND (Only visible on Mobile) */}
-      <header className="md:hidden shrink-0 border-b border-slate-800 bg-slate-900/90 backdrop-blur-md px-5 py-3 flex items-center justify-between z-20">
+      <header className={`md:hidden shrink-0 border-b ${darkMode ? 'border-slate-800 bg-slate-950/90' : 'border-slate-200 bg-white/90'} backdrop-blur-md px-5 py-3 flex items-center justify-between z-20`}>
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/20">
-            <Sparkles className="w-4 h-4 text-white" />
+          <div className={`w-8 h-8 rounded-lg ${darkMode ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'} flex items-center justify-center shadow-sm`}>
+            <Logo className="w-5 h-5" />
           </div>
-          <h1 className="font-black text-slate-100 text-sm tracking-tight">CivicMind AI</h1>
+          <h1 className={`font-display font-bold ${darkMode ? 'text-white' : 'text-slate-900'} text-base tracking-tight`}>CivicMind AI</h1>
         </div>
 
         <div className="flex items-center gap-2">
@@ -361,7 +457,10 @@ export default function App() {
             </button>
           ) : (
             <button
-              onClick={() => setIsAuthOpen(true)}
+              onClick={() => {
+                setAuthMode('login');
+                setIsAuthOpen(true);
+              }}
               className="p-1.5 rounded-lg bg-blue-600 text-white shadow-lg flex items-center justify-center"
             >
               <LogIn className="w-4 h-4" />
@@ -374,9 +473,9 @@ export default function App() {
       <main className="flex-1 min-h-0 flex flex-col relative z-0 pb-[72px] md:pb-0">
         
         {loadingIssues ? (
-          <div className="flex-1 flex flex-col items-center justify-center bg-slate-950 text-slate-400 gap-3">
+          <div className="flex-1 flex flex-col items-center justify-center bg-white dark:bg-slate-950 text-slate-500 dark:text-slate-400 gap-3 transition-colors duration-300">
             <Loader className="w-8 h-8 text-blue-500 animate-spin" />
-            <p className="text-sm font-semibold tracking-wide font-sans">Connecting to live municipal grid...</p>
+            <p className="font-mono text-xs font-semibold tracking-wide uppercase">Connecting to live municipal grid...</p>
           </div>
         ) : (
           <>
@@ -389,6 +488,7 @@ export default function App() {
                   heatmapEnabled={heatmapEnabled}
                   mapCenter={mapCenter}
                   onReportClick={handleOpenReport}
+                  darkMode={darkMode}
                 />
                 
                 {/* BIG FLOATING "REPORT ISSUE" BUTTON (Sits on top-right of map on Desktop, above bottom nav on mobile) */}
